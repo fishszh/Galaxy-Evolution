@@ -2,9 +2,9 @@
 
 利用LSTM学习星系并合过程，尝试再现星系并合过程。
 
-- 由于数据源较少，只是学到了几个固定的模式的并合过程
-- 这里只是根据图像信息，学习并合过程，学习结果并不一定受物理机制的限制。
+- 这里只考虑图像时间序列问题，学习并合过程，学习结果并不一定受物理机制的限制。
 - 如果我们能够获得具体的物理参数，整个结果可能会得到一定的提升。
+- 由于数据源较少，只是学到了几个固定的模式的并合过程
 
 ## 数据来源
 
@@ -22,11 +22,11 @@
 - [Spatial-Temporal Transformer Networks for Traffic Flow Forecasting](https://arxiv.org/abs/2001.02908) 
 - [ASTGCN](https://github.com/guoshnBJTU/ASTGCN-r-pytorch/blob/master/paper/AAAI-GuoS.2690.pdf)
 
-在此感谢[SEU-AI蜗牛车](https://www.zhihu.com/people/seu-aigua-niu-che/columns)，整理的文章，让新手可以快速找到核心解决思路和方案。
+特别感谢[SEU-AI蜗牛车](https://www.zhihu.com/people/seu-aigua-niu-che/columns)，整理的时间序列相关的文章，让新手可以快速找到核心解决思路和方案。
 
 ## 模型和技术
 
-目前主要还是基于`LSTM`和`RNN`展开的探索，但是如果除了图片数据外，有更深层次数据（恒星和气体的分布，一些物理机制，中心黑洞的信息）应该可以得到更佳的预测结果，这里只使用图片数据。
+目前主要还是基于`LSTM`和`RNN`展开的探索，但是如果除了图片数据外，有更深层次数据（恒星和气体的分布，一些物理机制，中心黑洞的信息）应该可以得到更佳的预测结果，而这里只使用图像数据信息。
 
 另一个方向就是利用图神经网络，受限于本人目前知识储备，暂不做讨论。
 
@@ -39,6 +39,10 @@
 采用多层`ConvLSTM`，简单的堆叠来实现星系并合过程的短期预测。
 
 `Loss function`采用`MSE`和`SSIM`.
+
+### JrajGRU
+
+...
 
 ## 结果
 
