@@ -128,3 +128,6 @@ class ProcessGif():
             '/content/com_%04d_*.png' % start_frame,
             '/com_%s_%04d.gif' %(loss_model, start_frame)]
         gen_gif(*com_pattern)
+
+
+
