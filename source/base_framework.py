@@ -74,7 +74,7 @@ class ProcessGif():
             input_frame = start_frame + i*self.cfg.tempro_steps_interval
             output_frame = input_frame + steps_input
 
-            fig, axes = plt.subplots(1, 4, figsize=(20,5))
+            fig, axes = plt.subplots(1, 4, figsize=(20,5), dpi=80)
             fig.subplots_adjust(wspace=0, top=1, left=0, bottom=0, right=1)
             if i < self.cfg.tempro_steps:
                 axes[0].imshow(x[0,i])
