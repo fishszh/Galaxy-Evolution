@@ -32,14 +32,17 @@
 
 现有模型主要有`ConvLSTM`,`ConvGRU`,`PredRNN`,`TrajGRU`, `E3D-LSTM`，这些模型一般为一些现有模块的重组或者改造，感觉缺乏理论建设，主要还是在细微之处的设计和思考，目前看来还有一段路要走。
 
-本人作为小学生，也只是在尝试探索，学习前辈们的经验，把他们走过的路走一遍，希望能为之后续工作奉献一份力量。
+$$
+Loss  = \alpha \mathbf{SSIM} + (1-\alpha) \mathbf{MAE}
+$$
+
+本人也只是在尝试探索，学习前辈们的经验，把他们走过的路走一遍，希望能为之后续工作奉献一份力量。
 
 ### Simple ConvLSTM
 
 - 采用多层`ConvLSTM`，简单的堆叠来实现星系并合过程的短期预测。SSIM基本稳定在0.86。
 - 改变keneral-size和stride后，参数增加一倍，反而更快了。特征提取变换后，需要更多个epoch的训练。
 
-`Loss function`采用`MSE`和`SSIM`.
 
 ### JrajGRU
 
@@ -61,32 +64,23 @@
 
 ### Simple ConvLSTM
 
-- Pattern 1
+- **Short term**
 
 $$
 (\hat{v}_{n+k},\ldots,\hat{v}_{n+1}) = \argmax p(v_{n+k},\ldots,v_{n+1}|\tilde{v}_{n-j+1}, \tilde{v}_{n-j+2},\ldots,\tilde{v}_{n})
 $$
 
-长期预测还是要用到pattern 2.
 
-- Pattern 2
-    - 初始时刻
+- **Long term**
+    - First step
 $$
 \hat{v}_{n+1} = \argmax p(v_{n+1}|\tilde{v}_{n-j+1}, \tilde{v}_{n-j+2},\ldots,\tilde{v}_{n})，j=20
 $$
-    - 之后
+    - Then
 $$
 \hat{v}_{n+k} = \argmax p(v_{n+k}|\tilde{v}_{n+k-j-1}, \tilde{v}_{n+k-j},\ldots,\tilde{v}_{n},\hat{v}_{n+1}, \ldots,\hat{v}_{n+k-1}), j=20, k=1,2,3,\ldots
 $$
 
-#### Pattern 1 MSE效果
-
-|训练集|测试集|测试|
-|:----:|:----:|:---:|
-|short term|short term(j=k=20)|long term(k=10)|
-|![](./imgs/SimpleConvLSTM/convlstm_com_mse_0250.gif)|![](./imgs/SimpleConvLSTM/convlstm_com_mse_1200.gif)|![](./imgs/SimpleConvLSTM/convlstm_gen_mse_1200_10.gif)|
-|![](./imgs/SimpleConvLSTM/convlstm_com_mse_0300.gif)|![](./imgs/SimpleConvLSTM/convlstm_com_mse_1500.gif)|![](./imgs/SimpleConvLSTM/convlstm_gen_mse_1500_10.gif)|
-|![](./imgs/SimpleConvLSTM/convlstm_com_mse_0500.gif)|![](./imgs/SimpleConvLSTM/convlstm_com_mse_2000.gif)|![](./imgs/SimpleConvLSTM/convlstm_gen_mse_0500_10.gif)|
 
 
 就这个结果看来，几个简单的`ConvLSTM`的堆叠，能有如此表现，我个人还是比较满意的。
@@ -94,29 +88,28 @@ $$
 - 短期的预测表象相当不错，测试集为并合过程后期，相关的整体结构特征并没有在训练集中出现，预测的行为基本一致，只是颜色上略有差别。
 - 长期的预测，表现的相当不好，原因也是这个简单的堆叠导致的，经过训练后短期的一些行为特征会被长期训练覆盖掉，而且用一个状态转换模式来表征所有的变化显然是不合适的，一般的做法是引入`Attention`机制，具体有多种实现方式，主要表现在，对不同层级间特征的处理方式不同，于此同时可以引入各种经典的网络结构的一些特征（UNET（关注中间过程信息流的传递）,multi-Attention（关注中间过程的输入信息流）,GAN(从输入和输出端来做决策调整)...）。
 
-#### Pattern 2 SSIM效果
 
-|训练集||
-|:----:|:----:|
-|short term|long term(j=k=20)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0200.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0200_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0500.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0500_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0700.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0700_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1000.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1000_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1250.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1250_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1500.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1500_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1800.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1800_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_2000.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_2000_20.gif)|
-|**测试集**|对比度较低，SSIM对对比度不敏感？|
-|long term (k=20)|long term (k=20)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0281.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0281_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0581.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0581_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_0781.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_0781_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1081.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1081_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1281.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1281_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1581.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1581_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_1881.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_1881_20.gif)|
-|![](./imgs/SimpleConvLSTM/com_ssim_2081.gif)|![](./imgs/SimpleConvLSTM/gen_ssim_2081_20.gif)|
+
+|训练集|
+|:----:|
+|j=20, k=30|
+|![](./imgs/SimpleConvLSTM/com_mix_0200.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0500.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0700.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1000.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1250.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1500.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1800.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_2000.gif)|
+|**测试集**|
+|![](./imgs/SimpleConvLSTM/com_mix_0281.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0581.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0781.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1081.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1281.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1581.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1881.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_2081.gif)|
 
 - 设置`ConvLSTM`的`keneral_size=[3x3],stride=2`，并进行了反卷积过程，这样的结果比`stride=1`的结果稍差一些。
 - 但训练集和测试集的长期预测要比原来简单的堆叠要好很多。

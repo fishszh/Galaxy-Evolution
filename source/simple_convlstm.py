@@ -1,9 +1,4 @@
 # %%
-'''
-This code is for a short term prediction, the long term prediction is considered
-in ConvLSTM_2.
-'''
-
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers, losses
@@ -29,10 +24,12 @@ class SubConfig(Config):
 cfg = SubConfig()
 
 # %%
-img_path = glob_image_path('/content/colliding/', '*.jpg')
+img_path = glob_image_path('../data/colliding/', '*.jpg')
 images = gen_images_set(img_path)
 def generator():
-    for i in tf.range(1500):
+    index = [i for i in range(2100) if i % 100 < 40]
+    for i in index:
+
         steps = cfg.tempro_steps * cfg.tempro_steps_interval
         image_x = images[i : i+steps*2 : cfg.tempro_steps_interval]
         # image_y = images[i+steps : i+2*steps: cfg.tempro_steps_interval]
@@ -52,12 +49,16 @@ convlstm = keras.Sequential([
     layers.BatchNormalization(),
     layers.ConvLSTM2D(128, 3, 2, 'same', return_sequences=True, use_bias=False),
     layers.BatchNormalization(),
-    # layers.ConvLSTM2D(128, 1, 1, 'same', return_sequences=True, use_bias=False),
-    # layers.BatchNormalization(),
-    layers.Conv3DTranspose(64, 3, [1,2,2], 'same', activation='relu'),
+    layers.ConvLSTM2D(128, 1, 1, 'same', return_sequences=True, use_bias=False),
     layers.BatchNormalization(),
-    layers.Conv3DTranspose(32, 3, [1,2,2], 'same', activation='relu'),
+    layers.Conv3DTranspose(64, 3, [1,2,2], 'same'),
     layers.BatchNormalization(),
+    layers.ReLU(),
+    layers.Conv3DTranspose(64, 1, 1, 'same', activation='relu'),
+    layers.Conv3DTranspose(32, 3, [1,2,2], 'same'),
+    layers.BatchNormalization(),
+    layers.ReLU(),
+    layers.Conv3DTranspose(32, 1, 1, 'same', activation='relu'),
     layers.Conv3DTranspose(3, 3, [1,2,2], activation='sigmoid', padding='same', data_format='channels_last')
 ])
 
@@ -74,11 +75,11 @@ if ckpt_manager.latest_checkpoint:
     checkpoint.restore(ckpt_manager.latest_checkpoint)
 
 # %%
-def train_model(loss_model='ssim'):
-    if loss_model == 'ssim':
-        loss_func = ssim_loss_func
+def train_model(loss_model='mix'):
+    if loss_model == 'mix':
+        loss_func = mix_loss_func
     else:
-        loss_func = mse_loss_func
+        loss_func = ssim_loss_func
     for epoch in range(1, cfg.epochs+1):
         start_time = time.time()
         for train_batch in train_ds:
@@ -88,17 +89,23 @@ def train_model(loss_model='ssim'):
         
         if epoch % 1 == 0:
             ckpt_save_path = ckpt_manager.save()
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 251)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 301)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 501)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 1201)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 1501)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 200)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 500)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 700)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1000)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1250)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1500)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1800)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 2000)
 
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 1601)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 1701)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 1800)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 2000)
-            cfg.process_gif(convlstm, images, 'ssim', epoch, 2100)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 281)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 581)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 781)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1081)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1281)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1581)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 1881)
+            cfg.process_gif(convlstm, images, loss_model, epoch, 2081)
             
 
         if epoch % 1 == 0:
@@ -113,17 +120,29 @@ def mse_loss_func(y, y_pred):
     return loss
 
 @tf.function
+def mae_loss_func(y, y_pred):
+    loss = tf.math.abs(y-y_pred)
+    loss = tf.reduce_mean(loss, axis=(2,3,4))
+    return loss
+
+@tf.function
 def ssim_loss_func(y, y_pred):
-    loss = tf.image.ssim(y,y_pred, max_val=1.0)
-    loss = tf.reduce_mean(loss)
+    loss = tf.image.ssim(y,y_pred, max_val=1.0, filter_size=5)
     return 1-loss
+
+@tf.function
+def mix_loss_func(y, y_pred):
+    loss = 0.85*ssim_loss_func(y, y_pred) + 0.15*mae_loss_func(y, y_pred)
+    loss = tf.reduce_mean(loss)
+    return loss
+
 
 @tf.function
 def train_step(train_batch, loss_func):
     x, y = tf.split(train_batch, num_or_size_splits=2, axis=1)
     with tf.GradientTape() as tape:
         y_pred = convlstm(x, training=True)
-        loss = loss_func(y, y_pred)
+        loss = mix_loss_func(y, y_pred)
     grads = tape.gradient(loss, convlstm.trainable_variables)
     optimizers.apply_gradients(zip(grads, convlstm.trainable_variables))
 
@@ -133,6 +152,6 @@ def train_step(train_batch, loss_func):
 # %%
 
 if __name__ == "__main__":
-    train_model(loss_model='ssim')
-    
+    # train_model(loss_model='mix')
+    cfg.process_gif(convlstm, images, 'mix', 1, 200)
 # %%

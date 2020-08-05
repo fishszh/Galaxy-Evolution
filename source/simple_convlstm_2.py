@@ -123,6 +123,6 @@ def train_step(train_batch, loss_func):
 # %%
 
 if __name__ == "__main__":
-    train_model(loss_model='ssim')
-    
+    # train_model(loss_model='ssim')
+    cfg.process_gif(convlstm, images, 'ssim', 1, 251)    
 # %%
