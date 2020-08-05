@@ -95,16 +95,16 @@ $$
 
 #### 4.1.1. Demo
 
-- j=20, k=30
-  
-![](./imgs/SimpleConvLSTM/com_mix_0281.gif)
-![](./imgs/SimpleConvLSTM/com_mix_0581.gif)
-![](./imgs/SimpleConvLSTM/com_mix_0781.gif)
-![](./imgs/SimpleConvLSTM/com_mix_1081.gif)
-![](./imgs/SimpleConvLSTM/com_mix_1281.gif)
-![](./imgs/SimpleConvLSTM/com_mix_1581.gif)
-![](./imgs/SimpleConvLSTM/com_mix_1881.gif)
-![](./imgs/SimpleConvLSTM/com_mix_2081.gif)
+|j=20, k=30|
+|:---:|
+|![](./imgs/SimpleConvLSTM/com_mix_0281.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0581.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_0781.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1081.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1281.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1581.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_1881.gif)|
+|![](./imgs/SimpleConvLSTM/com_mix_2081.gif)|
 
 - 设置`ConvLSTM`的`keneral_size=[3x3],stride=2`，并进行了反卷积过程，这样的结果比`stride=1`的结果稍差一些。
 - 但训练集和测试集的长期预测要比简单的堆叠要好很多。
